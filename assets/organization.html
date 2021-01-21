@@ -1,0 +1,91 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@zendeskgarden/css-bedrock@7.0" type="text/css">
+  <link href="styles.css" rel="stylesheet">
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+</head>
+<body style="display:none;">
+  <script type="text/javascript" src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <script src="https://unpkg.com/vue@3.0.0-beta.12/dist/vue.global.js"></script>
+  
+  <script>
+    var client = ZAFClient.init();
+    async function getOrg() {
+      const data = await client.get('organization')
+      return data["organization"];
+    }
+
+    async function getSearch() {
+      var org = await getOrg()
+      const orgName = org.name
+      const helpCenter = await client.request('/api/v2/search.json?query=type:user '+orgName+' -tags:tickets_write -tags:tickets_read')
+      const tickets_write = await client.request('/api/v2/search.json?query=type:user '+orgName+' tags:tickets_write')
+      const tickets_read = await client.request('/api/v2/search.json?query=type:user '+orgName+' tags:tickets_read')
+      return [helpCenter, tickets_write, tickets_read];
+    }
+      
+client.on('app.registered', async function() {
+            client.invoke('resize', { width: '100%', height: '850px' });
+          });
+  </script>
+
+<div class="a" id="app">
+  <div class="nav-bar animate__animated animate__backInUp"> {{product}}</div>
+  <button class="menusuper animate__animated animate__backInUp --animate-delay" id="super"
+  @click="clear(), addToCart('tickets_write'), click('super')" :class="{disabledB: !superbrukercount}" 
+  :disabled="!superbrukercount">Superbrukere ({{superbrukercount}})</button>
+  
+  <button class="menuticketsread animate__animated animate__backInUp --animate-delay" id="read"
+  @click="clear(), addToCart('tickets_read'), click('read')"
+  :class="{disabledB: !ticketreadcount}":disabled="!ticketreadcount">Tickets_read ({{ticketreadcount}})</button>
+
+  <button class="menuhelpcenter animate__animated animate__backInUp --animate-delay" id="center" 
+  @click="clear(), addToCart('HelpCenter'), click('center')":class="{disabledB: !helpcentercount}"
+  :disabled="!helpcentercount">Artikkel tilgang ({{helpcentercount}})</button>
+
+  <button class="menuinfo animate__animated animate__backInUp --animate-delay" id="info" @click="clear(), click('info'), addToCart('info')">Info</button>
+  <div class="product-display">
+    <div class="product-container">
+      <div class="product-image animate__animated animate__rollIn" :style="{display: display}">
+        <img v-bind:src="image">
+      </div>
+      <div class="product-info">
+        <p v-if=informasjon style="white-space: pre-line"><br>{{informasjon}}</p>
+        <ul>
+          <div v-if="loading" class="lds-ripple"><div></div><div></div></div>
+          <div v-for="detail, index in details" :key="index" >
+            <li v-if="detail.suspended">
+            -<s>{{detail.name}}</s>-
+            </li>
+            <li v-else>
+              <transition name="custom-classes-transition"
+              leave-active-class="animate__animated animate__zoomOut"
+              >
+              <div v-if="checked">
+                <a href="https://andreas.no" style="color:#333" v-on:click.prevent="test($event)">{{index+1}}. {{detail.email}}</a>
+              </div>
+            </transition>
+            <transition name="custom-classes-transition"
+            leave-active-class="animate__animated animate__zoomOut"
+              >
+              <div v-show=!checked>
+                <a class="emaillist" href="https://andreas.no" style="color:#333" v-on:click.prevent="test($event)">{{index+1}}. {{detail.name}}</a>
+                <!-- <a :href="'https://sikri.zendesk.com/agent/#/users/' + detail.id" style="color:#333" >{{index+1}} {{detail}}</a> -->
+              </div>
+            </transition>
+            </li>
+          </div>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="./main.js"></script>
+<script>
+  const mountedApp = app.mount('#app')
+</script>
+</body>
+</html>
